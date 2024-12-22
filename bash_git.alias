@@ -1,3 +1,13 @@
+#########################
+# Bloc : Alias Bash GIT #
+#########################
+
+# Pour appliquer les changements immédiatement, recharger le fichier .bashrc :
+# source ~/.bashrc
+
+# Exporter des lignes vers un fichier :
+# sed -n '10,280p' ~/.bash_aliases/bash_git.alias > /partage-git-public/afficher-git-sur-ps1.alias
+
 ##########################################
 # Sauvegarder la variable PS1 par défaut #
 ##########################################
@@ -267,3 +277,244 @@ RESET="\e[0m"
 
 export PS1='${debian_chroot:+($debian_chroot)}\[\033[0;32m\]\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\n\[\e[0;36m\][\t] \[\e[1;31m\]\u\[\e[0;31m\]@\[\e[1;31m\]\h \[\e[0;32m\]: \[\e[0;36m\]\w \[\033[0;32m\]\n\[\033[0;32m\]\$\[\e[0;32m\] \e[0;31m\]$(parse_git_branch)\n\[\033[0;32m\]\$ \[\e[0m\]'
 #########################
+
+###########################
+# New repo -> serveur git #
+###########################
+# Créer un nouveau repo du système a sauvegarder vers le serveur git :
+# 1- Créer du contenu dans un répertoire :
+# echo "#" >> README.md
+#
+# 2- Initialiser le projet git :
+alias gitinit='git init'
+#
+# 3- Ajouter un fichier ou un répertoire contenant des fichiers au projet git :
+# git add README.md
+#
+# 4- Ajouter un message pour personaliser l'enregistrement git local (commit) :
+# git commit -m "Mon premier commit."
+#
+# 5- Définir la branche principale du projet (main, master, ...) :
+alias gitb='git branch -M master'
+#
+# 6- Git remote
+# git remote add origin https://github.com/Amis-BASH/doc.amis-sh.fr.git
+# gitr + url.git :
+alias gitr='git remote add origin'
+#
+# 7- Git push
+# git push -u origin master
+
+# Pousser un repo git déjà existant vers un nouveau repo sur le serveur git :
+# git remote add origin https://github.com/Amis-BASH/doc.amis-sh.fr.git
+# git branch -M master
+# git push -u origin master
+
+# Importer un repo du serveur git vers le système :
+# git clone url.git
+
+# Ajouter des fichiers au repo + commit et message + envoi sur le serveur git :
+alias gita='git add .'
+alias gitaf='git add -f .'
+# alias gitc='git commit -m' # +  "Message"
+alias gitc='git commit'
+alias gitp='git push -u origin master'
+
+#####################
+# Afficher les logs #
+#####################
+# Lister les commandes pour afficher un diff sur les lignes effacées.
+
+# Affiche le dernier commit, sa référence, la branche, et le commentaire :
+alias gitvv='git branch -vv'
+
+# Afficher les logs :
+alias gitl='git log --oneline'
+alias gitll='git log --name-only --oneline'
+
+# Alias diff sur un seul fichier : exemple.txt
+alias gitdiff='f() { git diff $(git log -2 --format=format:%H -- "$1") -- "$1"; }; f'
+
+alias gitlogdiff='git log -p'
+
+# Ajouter un nombre de commit a lister, par exemple 2, 3, 5, 10 :
+alias gitlog='git log -n 8'
+alias gitlogx='git log -n '
+
+# Afficher les logs de statistiques :
+alias gitstat='git log --stat'
+alias gitlogdas='git log --graph --decorate --all --stat -p'
+
+# Méthode complete avec un graphique pour suivre les merges :
+alias gitlogda='git log --oneline --graph --decorate --all'
+
+# Afficher le status d'un dépôt git :
+alias gits='git status'
+alias gitstatus="sh /root/all-scripts/scripts-serveur/afficher-exporter-remplacer/afficher/003-afficher-projets-git.sh"
+
+##############################################
+# Afficher l'url du dépôt sur le serveur git #
+##############################################
+alias giturl='git ls-remote --get-url origin'
+
+#######################################
+# Nettoyer et compacter un projet git #
+#######################################
+# Très performante pour réduire le volume et perdre l'historique.
+alias gitgcpa='sudo git gc --prune=now --aggressive'
+# Utiliser sans risque : Vérifier les objets laissés après un rebase ou reset :
+alias gitf='git fsck --unreachable'
+alias gitff='git fsck --full --unreachable'
+
+# -->
+# Créer un tag avant un git prune et sauvegarder la branche courante dans une nouvelle branche ...
+# git tag Optimisation-21-12-2024-Git-gc-Prune-Now
+# Facultatif, pour enregistrer à distance :
+# git push origin Optimisation-21-12-2024-Git-gc-Prune-Now
+# -->
+# Peut détruire l'historique si des objets ne sont plus référencés :
+alias gitgcpn='sudo git gc --prune=now'
+
+# Avec .gitignore et cette commande retirer un répertoire du suivi de git :
+alias gitrm='git rm -r --cached'
+
+# Afficher les lignes suivantes dans le terminal :
+alias gitversion="awk 'NR>=381 && NR<=428' ~/.bash_aliases/bash_git.alias"
+###########
+# Version #
+###########
+
+   ################
+   # Créer un tag #
+   ################
+
+# 1
+# Identifier les commits considérés stables dans la liste des commits avec l'alias gitl.
+
+# 2
+# Ajouter un tag local pour informer d'une modification notable sur une branche :
+# git tag -a NumCommitStable ASCP-v1.0 -m "ASCP GIT PS1 Version 1.0"
+
+# 3
+# Ajouter un tag local sur la branche disante :
+# git push origin ASCP-v1.0
+
+   #####################
+   # Afficher les tags #
+   #####################
+
+# 1
+# Récupérer les tags du dépôt distant :
+alias gittagr='git fetch --tags'
+
+# 2
+# Afficher les tags et le message du tag du dépôt local :
+# alias gittag='git tag -n'
+# Afficher le numéro de commit du tag et le message du tag :
+alias gittag="git log -1 --pretty=format:'Version stable sur le commit : %h -- %an -- %s' ASCP-v1.0"
+
+# Afficher un hash court ou long en fonction des besoins :
+# git log -1 --pretty=format:"%H -- %s" ASCP-v1.0
+# git log -1 --pretty=format:"%h -- %s" ASCP-v1.0
+
+   ####################
+   # Supprimer un tag #
+   ####################
+
+# 1
+# Supprimer un tag sur la branche locale :
+alias gittagd='git tag -d ' # Ajouter le nom du tag a supprimer. Récupérer le nom du tag avec gittag.
+
+# 2
+# Supprimer un tag sur la branche distante :
+# git push origin :refs/tags/ASCP-v1.0
+
+#########################
+# Fusionner des commits #
+#########################
+# pick --> squash
+# alias gitfusion='git rebase -i HEAD~100'
+alias gitfu="count=\$(git rev-list --count HEAD); count=\$((count - 1)); if [ \$count -lt 100 ]; then git rebase -i HEAD~\$count; else git rebase -i HEAD~100; fi"
+# En cas de conflits, les résoudre manuellement, puis, lancer un rebase :
+alias gitrebase='git rebase --continue'
+# Forcer vers origin après un rebase -i interactif :
+alias gitpf='git push origin master --force'
+
+
+# Exemple de sortie: 20-12-2024
+# current_date=$(date "+%d-%m-%Y")
+#
+# Exemple de sortie : 20-12-2024_23-45
+# current_date=$(date "+%d-%m-%Y_%H-%M")
+# echo $current_date
+
+# Pousser un Tag à la date du jour : (Préférer un marqueur commec"version 1.0" ...
+# git tag $\{current_date\}
+# Copier le tag vers origin. (Ce n'est pas une branche, justecun marqueur.)
+# git push origin $\{current_date\}
+
+# ajouter la date dans le nom ici !!!!
+# Copier la branche vers une nouvelle branche avec la date du jour :
+# git checkout -b "Backup-$current_date"
+# git push origin "Backup-$current_date"
+# Ceci crée et pousse une nouvelle branche.
+# revenir sur la branche master :
+# git checkout master
+
+# Nouvelle branche :
+# a="nouveaunomdebranche"
+# Créer une nouvelle branche sans erreur !
+# git checkout -b $a ; git push --set-upstream origin $a ;
+
+#########
+# Notes #
+#########
+
+# Comment :
+# Créer un dépôt public.
+# Envoyer un seul fichier.
+# Envoyer certaines lignes du fichier.
+
+# Afficher les commit en retard de la branche Backup :
+# git diff master Backup
+
+# Valider et résoudre le cheminement interbranches :
+# git checkout nom_de_branche
+# git merge master
+
+
+########
+# Afficher branches locales :
+# git branch
+
+# Supprimer une branche locale (Utiliser -D pour forcer) :
+# git branch -d branche_a_supprimer
+
+# Afficher toutes les branches distantes :
+alias gitbranchesdistantes='git fetch origin'
+# Cela les gardes en mémoire dans la liste :
+# Afficher branches locales et distantes :
+# git branch -a
+# Affiche uniquement les branches distantes :
+# git branch -r
+
+# Importer une branche distante :
+# git checkout -b Backup origin/Backup
+
+# Se placer sur la branche Backup :
+# git checkout Backup
+# Fusionner les modifications de master dans Backup :
+# git merge master
+# Pousser les modifications vers la branche origin Backup :
+# git push origin Backup
+
+# Equivalent :
+# git checkout Backup
+# git fetch origin
+# git rebase master
+# git push --force-with-lease origin Backup
+
+
+# Supprimer une branche distante :
+# git push origin --delete branche_a_supprimer
+#####
