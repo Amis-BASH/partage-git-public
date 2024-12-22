@@ -1,6 +1,3 @@
-# Améliorations a envisager :
-# Créer une vue en cas de rebasage ...
-# https://github.com/Amis-BASH/partage-git-public/issues/1
 
 ##########################################
 # Sauvegarder la variable PS1 par défaut #
@@ -25,6 +22,10 @@ fi
 ########################################################################################################################
 # Fonction pour afficher le nom de la branche git courante sur PS1 et le nombre de fichiers modifiés ou créés a commit #
 ########################################################################################################################
+# Améliorations a envisager :
+# Créer une vue en cas de rebasage ...
+# https://github.com/Amis-BASH/partage-git-public/issues/1
+
 parse_git_branch() {
 
 #####################################
@@ -45,14 +46,21 @@ ROUGE1="\e[1;31m"
 VERT="\e[32m"
 RESET="\e[0m"
 
+ ###################
+ # Afficher $ ou # #
+ ###################
+ if [ "$EUID" -ne 0 ]; then
+ prompt_symbol="\$"
+ else
+ prompt_symbol="#"
+ fi
+ ###################
+
  # Si le répertoire courant n'est pas dans un projet Git :
  if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
 
-        # Faire simple :
-        # result="Ce répertoire n'est pas un projet git."
-
-        # Rajouter une proposition d'alias a afficher sur le PS1 :
-        result="Ce répertoire n'est pas un projet Git.\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : (A adapter.) alias memo gitsta2tus${RESET}"
+        # Ajouter une proposition d'alias a afficher sur le PS1 :
+        result="Ce répertoire n'est pas un projet Git.\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : alias memo gitstatus rrrr rtd${RESET}"
 
         # Afficher le résultat de la fonction dans PS1 :
         echo -e "$result"
@@ -100,9 +108,11 @@ RESET="\e[0m"
  # Message dans un répertoire .git #
  ###################################
  # La variable confgit a pour valeur un message personnalisé :
- local confgit="Répertoire de configuration git : ${VERT}➜ .git et ses sous-dossiers ${RESET}"
+ local confgit="Répertoire de configuration git${VERT}➜ Configurer le projet Git dans ce répertoire .git et ses sous-dossiers. ${RESET}"
 
-    # Compter le nombre de modifications de fichiers :
+    ##################################################
+    # Compter le nombre de modifications de fichiers #
+    ##################################################
 
     ### Nouveaux fichiers créés a ajouter :
     if [ "$changes_to_add" -gt 0 ]; then
@@ -173,16 +183,6 @@ RESET="\e[0m"
  # 3) Aucun fichier ajouté a l'index.
  # 4) Aucun commit en attente d'être poussé vers origin.
 
- ###################
- # Afficher $ ou # #
- ###################
- if [ "$EUID" -ne 0 ]; then
- prompt_symbol="\$"
- else
- prompt_symbol="#"
- fi
- ###################
-
  # Aucune donnée n'a été modifiée, aucune donnée n'est en attente de traitement :
  if [ "$changes_to_commit" -eq 0 ] && [ "$changes_to_add" -eq 0 ] && [ "$changes_commit" -eq 0 ] && [ "$changes_add" -eq 0 ]; then
 
@@ -207,34 +207,41 @@ RESET="\e[0m"
 
  fi
 
+ ##########################
+ # Surcharger la variable #
+ ##########################
 
- # Surcharger la variable en fonction des tests suivants :
- #######################
+ #####
+ # 1 #
+ #####
+ # Variable du chemin actuel et du chemin du projet Git si il existe :
+ cur_dir=$(pwd)
+ gitdir=$(git rev-parse --git-dir 2> /dev/null)
+
+ # Vérifier si current directory contient ".git"
+ if [[ "$cur_dir" == *"$gitdir"* ]] && [ "${cur_dir}" != "$gitdir" ]; then
+ # result="$confgit \n Dans le répertoire .git ou un de ses sous-répertoire."
+
  # Certaines commandes Git, comme git branch --show-current, peuvent toujours obtenir des informations dans le répertoire .git.
  # Cependant, des commandes comme git status nécessitent d'être dans l'arborescence de travail du dépôt.
  # Le répertoire .git est le répertoire de configuration et de métadonnées.
 
-#####
-# var :
-cur_dir=$(pwd)
-gitdir=$(git rev-parse --git-dir 2> /dev/null)
-#####
+ # Adapter la liste des alias affichée pour .git qui n'est pas dans l'arbre de travail du projet Git :
+ result="$confgit\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : gitstatus rrrr rtd${RESET}"
 
-# Vérifier si current directory contient `.git`
-if [[ "$cur_dir" == *"$gitdir"* ]] && [ "${cur_dir}" != "$gitdir" ]; then
-# result="$result \n Dans le répertoire .git ou un de ses sous-répertoire."
- result="$confgit\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : (A adapter pour .git qui n'est pas dans l'arbre de travail.) gitdiff gitl gitlogx gitstatus${RESET}"
+ #####
+ # 2 #
+ #####
+ # Pas besoin de tester cet affichage !
+ # Il fonctionne déjà suite aux modifications des fichiers du dépôt git.
+ # Permet de confirmer que le répertoire est dans l'arbre de travail du projet Git :
+ elif git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+ # result="$result \n Dans le répertoire de travail du projet Git"
+ : # Ne rien faire.
+ fi
+ ##########################
 
-# Pas besoin de tests cet affichage fonctionne déjà avec les modifications des fichiers du dépôt git.
-# Permet de confirmer que le répertoire est dans l'arbre de travail du projet Git :
-elif git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
-# result="$result \n Dans le répertoire de travail du projet Git"
-: # Ne rien faire.
-fi
- #######################
-
-
- # Afficher le résultat de la fonction dans PS1.
+ # Afficher le résultat de la fonction dans PS1 :
  echo -e "$result"
  fi
 }
@@ -261,3 +268,4 @@ fi
 
 export PS1='${debian_chroot:+($debian_chroot)}\[\033[0;32m\]\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\n\[\e[0;36m\][\t] \[\e[1;31m\]\u\[\e[0;31m\]@\[\e[1;31m\]\h \[\e[0;32m\]: \[\e[0;36m\]\w \[\033[0;32m\]\n\[\033[0;32m\]\$\[\e[0;32m\] \e[0;31m\]$(parse_git_branch)\n\[\033[0;32m\]\$ \[\e[0m\]'
 #########################
+
