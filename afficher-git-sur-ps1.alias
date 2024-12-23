@@ -40,6 +40,7 @@ local changes_commit=""
 # Couleurs utilisées #
 ######################
 GRIS="\e[0;90m"
+ORANGE="\e[33m"
 ROUGE="\e[0;31m"
 ROUGE1="\e[1;31m"
 VERT="\e[32m"
@@ -118,10 +119,10 @@ RESET="\e[0m"
     # Il existe de nouveaux fichiers a ajouter :
        # Si la variable égale 1 :
        if [ "$changes_to_add" -eq 1 ]; then
-           result="$result ${ROUGE}[$changes_to_add Fichier ajouté]${RESET}"
+           result="$result ${ORANGE}[$changes_to_add Fichier ajouté]${RESET}"
        # Si la variable est plus grande que 1 :
        elif [ "$changes_to_add" -gt 1 ]; then
-           result="$result ${ROUGE}[$changes_to_add Fichiers ajoutés]${RESET}"
+           result="$result ${ORANGE}[$changes_to_add Fichiers ajoutés]${RESET}"
        fi
     else
     # Si 0 nouveaux fichiers ajoutés dans le projet git, ne rien afficher, ne rien ajouter à la variable résult :
@@ -133,10 +134,10 @@ RESET="\e[0m"
     # Il existe des fichiés modifiés :
        # Si la variable égale 1 :
        if [ "$changes_to_commit" -eq 1 ]; then
-           result="$result ${ROUGE}[$changes_to_commit Fichier modifié]${RESET}"
+           result="$result ${ORANGE}[$changes_to_commit Fichier modifié]${RESET}"
        # Si la variable est plus grande que 1 :
        elif [ "$changes_to_commit" -gt 1 ]; then
-           result="$result ${ROUGE}[$changes_to_commit Fichiers modifiés]${RESET}"
+           result="$result ${ORANGE}[$changes_to_commit Fichiers modifiés]${RESET}"
        fi
     else
     # Si 0 fichiers modifiés dans le projet git, ne rien afficher, ne rien ajouter à la variable result :
@@ -148,10 +149,10 @@ RESET="\e[0m"
     # Il existe des fichiers qui ont été ajoutés à l'index du projet git mais pas encore commit :
        # Si la variable égale 1 :
        if [ "$changes_add" -eq 1 ]; then
-           result="$result ${ROUGE}[$changes_add Fichier ajouté à l'index]${RESET}"
+           result="$result ${ORANGE}[$changes_add Fichier ajouté à l'index]${RESET}"
        # Si la variable est plus grande que 1 :
        elif [ "$changes_add" -gt 1 ]; then
-           result="$result ${ROUGE}[$changes_add Fichiers ajoutés à l'index]${RESET}"
+           result="$result ${ORANGE}[$changes_add Fichiers ajoutés à l'index]${RESET}"
        fi
     else
     # Si 0 fichiers ajoutés à l'index et en attente de commit, ne rien afficher, ne rien ajouter à la variable résult :
@@ -163,10 +164,10 @@ RESET="\e[0m"
     # Il existe des fichiers qui ont été commit mais les commit n'ont pas été poussés vers origin : -->
        # Si la variable égale 1 :
        if [ "$changes_commit" -eq 1 ]; then
-           result="$result ${ROUGE}[$changes_commit Pousser vers origin]${RESET}"
+           result="$result ${ORANGE}[$changes_commit Pousser vers origin]${RESET}"
        # Si la variable est plus grande que 1 :
        elif [ "$changes_commit" -gt 1 ]; then
-           result="$result ${ROUGE}[$changes_commit Pousser vers origin]${RESET}"
+           result="$result ${ORANGE}[$changes_commit Pousser vers origin]${RESET}"
        fi
     else
     # Si 0 commit en attente d'être envoyés vers origin, ne rien afficher, ne rien ajouter à la variable résult :
