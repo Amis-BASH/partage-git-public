@@ -1,0 +1,295 @@
+##########################################
+# Sauvegarder la variable PS1 par défaut #
+##########################################
+
+# Copier le contenu de PS1 dans la variable OLDPS1 :
+if [ -z "$OLDPS1" ];
+then OLDPS1="$PS1"
+fi
+# Restaurer l’ancienne version de la variable PS1 :
+# PS1=$OLDPS1
+
+#############################################################################
+# Fonction minimale pour afficher le nom de la branche git courante sur PS1 #
+#############################################################################
+# Exemple :
+# git@serveur ~/.bash_aliases (master) $
+# parse_git_branch() {
+# git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/ (\1)/'
+# }
+
+######################################
+# Fonction pour détecter un rebasage #
+######################################
+is_rebase_in_progress() {
+if [ -d "$(git rev-parse --git-dir 2> /dev/null)/rebase-merge" ] || [ -d "$(git rev-parse --git-dir 2> /dev/null)/rebase-apply" ]; then
+return 0
+else
+return 1
+fi
+}
+
+########################################################################################################################
+# Fonction pour afficher le nom de la branche git courante sur PS1 et le nombre de fichiers modifiés ou créés a commit #
+########################################################################################################################
+# Améliorations a envisager :
+# Créer une vue en cas de rebasage ...
+# https://github.com/Amis-BASH/partage-git-public/issues/1
+
+parse_git_branch() {
+
+#####################################
+# Déclaration des variables locales #
+#####################################
+local branch_name=""
+local changes_to_commit=""
+local changes_to_add=""
+local changes_add=""
+local changes_commit=""
+
+######################
+# Couleurs utilisées #
+######################
+GRIS="\e[0;90m"
+ORANGE="\e[33m"
+ROUGE="\e[0;31m"
+ROUGE1="\e[1;31m"
+VERT="\e[32m"
+RESET="\e[0m"
+
+ ###################
+ # Afficher $ ou # #
+ ###################
+ if [ "$EUID" -ne 0 ]; then
+ prompt_symbol="\$"
+ else
+ prompt_symbol="#"
+ fi
+ ###################
+
+ # Si le répertoire courant n'est pas dans un projet Git :
+ if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+
+        # Ajouter une proposition d'alias a afficher sur le PS1 :
+        result="Ce répertoire n'est pas un projet Git.\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : alias memo gitstatus rrrr rtd${RESET}"
+
+        # Afficher le résultat de la fonction dans PS1 :
+        echo -e "$result"
+
+ else
+
+ # Si le répertoire est dans un projet git :
+ # if git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+
+        # Le nom de la branche courante est mis en variable :
+        branch_name=$(git branch --show-current)
+
+        # Des fichiers ont été créés et sont en attente de commit :
+        changes_to_add=$(git status --porcelain 2> /dev/null | grep '^??' | wc -l | xargs)
+
+        # Des fichiers ont été modifiés et sont en attente de commit - Moins les fichiers ajoutés dans l'index avec gita :
+        changes_to_commit=$(git status --porcelain 2> /dev/null | grep '^[^?][^ ]' | wc -l | xargs)
+
+        # Des fichiers ont été ajoutés mais ne sont pas encore commit :
+        changes_add=$(git status --porcelain=v1 2> /dev/null | grep '^[AM].' | wc -l | xargs)
+
+        # Des fichiers ont été commit et sont en attente de push origin :
+        changes_commit=$(git cherry -v 2> /dev/null | wc -l | xargs)
+ fi
+
+ # Si le nom de la branche courante mis en variable précédement existe :
+ if [ -n "$branch_name" ]; then
+
+ # Déclarer les variables locales :
+
+ #####################################################
+ # Affiche le nombre de modifications Git en attente #
+ #####################################################
+ # La variable result a pour valeur minimale le nom de la branche git + Les modifications en attente :
+ local result="Nom de la branche${ROUGE} ➜ ${RESET}${ROUGE1}$branch_name${RESET}"
+
+ ######################################
+ # Aucune modification Git en attente #
+ ######################################
+ # La variable aucun (aucun changement) a pour valeur minimale le nom de la branche git. Aucune modification n'est en attente :
+ local aucun="Nom de la branche${VERT}➜ $branch_name ${RESET}"
+
+ ###################################
+ # Message dans un répertoire .git #
+ ###################################
+ # La variable confgit a pour valeur un message personnalisé :
+ local confgit="Répertoire de configuration git${VERT}➜ Configurer le projet Git dans ce répertoire .git et ses sous-dossiers. ${RESET}"
+
+    ##################################################
+    # Compter le nombre de modifications de fichiers #
+    ##################################################
+
+    ### Nouveaux fichiers créés a ajouter :
+    if [ "$changes_to_add" -gt 0 ]; then
+    # Il existe de nouveaux fichiers a ajouter :
+       # Si la variable égale 1 :
+       if [ "$changes_to_add" -eq 1 ]; then
+           result="$result ${ORANGE}[$changes_to_add Fichier ajouté]${RESET}"
+       # Si la variable est plus grande que 1 :
+       elif [ "$changes_to_add" -gt 1 ]; then
+           result="$result ${ORANGE}[$changes_to_add Fichiers ajoutés]${RESET}"
+       fi
+    else
+    # Si 0 nouveaux fichiers ajoutés dans le projet git, ne rien afficher, ne rien ajouter à la variable résult :
+    result="$result"
+    fi
+
+    ### Fichiers modifiés :
+    if [ "$changes_to_commit" -gt 0 ]; then
+    # Il existe des fichiés modifiés :
+       # Si la variable égale 1 :
+       if [ "$changes_to_commit" -eq 1 ]; then
+           result="$result ${ORANGE}[$changes_to_commit Fichier modifié]${RESET}"
+       # Si la variable est plus grande que 1 :
+       elif [ "$changes_to_commit" -gt 1 ]; then
+           result="$result ${ORANGE}[$changes_to_commit Fichiers modifiés]${RESET}"
+       fi
+    else
+    # Si 0 fichiers modifiés dans le projet git, ne rien afficher, ne rien ajouter à la variable result :
+    result="$result"
+    fi
+
+    ### Fichiers ajoutés à l'index en attente de commit :
+    if [ "$changes_add" -gt 0 ]; then
+    # Il existe des fichiers qui ont été ajoutés à l'index du projet git mais pas encore commit :
+       # Si la variable égale 1 :
+       if [ "$changes_add" -eq 1 ]; then
+           result="$result ${ORANGE}[$changes_add Fichier ajouté à l'index]${RESET}"
+       # Si la variable est plus grande que 1 :
+       elif [ "$changes_add" -gt 1 ]; then
+           result="$result ${ORANGE}[$changes_add Fichiers ajoutés à l'index]${RESET}"
+       fi
+    else
+    # Si 0 fichiers ajoutés à l'index et en attente de commit, ne rien afficher, ne rien ajouter à la variable résult :
+    result="$result"
+    fi
+
+    ### Commit a pousser vers origin :
+    if [ "$changes_commit" -gt 0 ]; then
+    # Il existe des fichiers qui ont été commit mais les commit n'ont pas été poussés vers origin : -->
+       # Si la variable égale 1 :
+       if [ "$changes_commit" -eq 1 ]; then
+           result="$result ${ORANGE}[$changes_commit Pousser vers origin]${RESET}"
+       # Si la variable est plus grande que 1 :
+       elif [ "$changes_commit" -gt 1 ]; then
+           result="$result ${ORANGE}[$changes_commit Pousser vers origin]${RESET}"
+       fi
+    else
+    # Si 0 commit en attente d'être envoyés vers origin, ne rien afficher, ne rien ajouter à la variable résult :
+    result="$result"
+    fi
+
+ ###########################################################
+ # Préparer l'affichage du contenu de la variable résultat #
+ ###########################################################
+ # Si les 4 variables sont vides :
+ # 1) Aucun fichier ajouté.
+ # 2) Aucun fichier modifié.
+ # 3) Aucun fichier ajouté a l'index.
+ # 4) Aucun commit en attente d'être poussé vers origin.
+
+ # Aucune donnée n'a été modifiée, aucune donnée n'est en attente de traitement :
+ if [ "$changes_to_commit" -eq 0 ] && [ "$changes_to_add" -eq 0 ] && [ "$changes_commit" -eq 0 ] && [ "$changes_add" -eq 0 ]; then
+
+ # Afficher uniquement le nom de la branche et les alias git :
+ result="$aucun\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : gitdiff gitl gitlogx gitstatus${RESET}"
+
+ else
+
+    # Si une des variables est vide, aucun message n'est affiché pour cette variable vide.
+    # Plus haut les tests conditionnels on mis la variable du message à vide si :
+       # Aucun fichiers ajoutés, aucun message.
+       # Aucun fichiers modifiés, aucun message.
+       # Aucun fichiers ajoutés à l'index, aucun message.
+       # Aucun commit en attente d'être poussé vers origin, aucun message.
+
+    # Si les 4 variables ont une valeur, afficher les quatres messages :
+    # Le nom de la branche et le nombre de fichiers ajoutés / modifiés / ajoutés à l'index / commit a pousser vers origin.
+
+    # Ajouter des alias git dans le pense bête :
+    # Afficher les alias gita gitc gitp pour ajouter les fichiers, lancer le commit, pousser vers origin :
+    result="$result\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : gita gitc gitp gitdiff gits gitdiff gitl gitlogx gitstatus${RESET}"
+
+ fi
+
+ ##########################
+ # Surcharger la variable #
+ ##########################
+
+ #####
+ # 1 #
+ #####
+ # Variable du chemin actuel et du chemin du projet Git si il existe :
+ cur_dir=$(pwd)
+ gitdir=$(git rev-parse --git-dir 2> /dev/null)
+
+ # Vérifier si current directory contient ".git"
+ if [[ "$cur_dir" == *"$gitdir"* ]] && [ "${cur_dir}" != "$gitdir" ]; then
+ # result="$confgit \n Dans le répertoire .git ou un de ses sous-répertoire."
+
+ # Certaines commandes Git, comme git branch --show-current, peuvent toujours obtenir des informations dans le répertoire .git.
+ # Cependant, des commandes comme git status nécessitent d'être dans l'arborescence de travail du dépôt.
+ # Le répertoire .git est le répertoire de configuration et de métadonnées.
+
+ # Adapter la liste des alias affichée pour .git qui n'est pas dans l'arbre de travail du projet Git :
+ result="$confgit\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : gitstatus rrrr rtd${RESET}"
+
+ #####
+ # 2 #
+ #####
+ # Pas besoin de tester cet affichage !
+ # Il fonctionne déjà suite aux modifications des fichiers du dépôt git.
+ # Permet de confirmer que le répertoire est dans l'arbre de travail du projet Git :
+ elif git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+ # result="$result \n Dans le répertoire de travail du projet Git"
+ : # Ne rien faire.
+ fi
+
+ #####
+ # 3 #
+ #####
+# Vérifier si un rebasage est en cours :
+if is_rebase_in_progress; then
+local rebase_info="${ROUGE}[Attention ! Un rebase en cours !]${RESET}"
+echo -e "$rebase_info"
+# Si pas de rebasage :
+else
+#echo "Fin du test de rebasage."
+result="$result Aucun rebasage"
+# Fin du test de rebasage :
+fi
+
+ ##########################
+
+ # Afficher le résultat de la fonction dans PS1 :
+ echo -e "$result"
+ fi
+}
+###########################################
+# Fin de la fonction d'affichage pour PS1 #
+###########################################
+
+###################################
+# Afficher la branche git sur PS1 #
+###################################
+# Ancien :
+# L'espace au niveau de \u@\h affiche un espace vide de retrait devant le nom d'utilisateur :
+# export PS1="\[\e[01;32m\] \u@\h \[\033[32m\]\w\[\033[33m\]\$(parse_git_branch)\[\033[00m\] $ "
+
+# Nouveau :
+# Exemple 1 sur une seule ligne et fini avec \[\e[Om\]' pour arrêter la couleur verte sur le $ qui devient # pour root.
+# export PS1='${debian_chroot:+($debian_chroot)}\[\e[0;36m\][\t] \[\e[1;31m\]\u\[\e[0;31m\]@\[\e[1;31m\]\h \[\e[0;32m\]: \[\e[0;36m\]\w \[\e[0;32m\]➜ \e[0;31m\]$(parse_git_branch)\[\033[0;32m\]\$ \[\e[0m\]''
+
+# Exemple 2 sur deux lignes, la nouvelle ligne affiche un # pour root.
+# export PS1='${debian_chroot:+($debian_chroot)}\[\e[0;36m\][\t] \[\e[1;31m\]\u\[\e[0;31m\]@\[\e[1;31m\]\h \[\e[0;32m\]: \[\e[0;36m\]\w \[\e[0;32m\]➜ \e[0;31m\]$(parse_git_branch)\[\033[0;32m\]\$\n\[\033[0;32m\]\$ \[\e[0m\]'
+
+# Exemple 3 - Dernière configuration :
+# export PS1='${debian_chroot:+($debian_chroot)}\[\033[0;32m\]\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\n\[\e[0;36m\][\t] \[\e[1;31m\]\u\[\e[0;31m\]@\[\e[1;31m\]\h \[\e[0;32m\]: \[\e[0;36m\]\w \[\033[0;32m\]\n\[\033[0;32m\]\$\[\e[0;32m\] \e[0;31m\]$(parse_git_branch)\n\[\033[0;32m\]\$ \[\e[0m\]'
+
+export PS1='${debian_chroot:+($debian_chroot)}\[\033[0;32m\]\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\$\n\[\e[0;36m\][\t] \[\e[1;31m\]\u\[\e[0;31m\]@\[\e[1;31m\]\h \[\e[0;32m\]: \[\e[0;36m\]\w \[\033[0;32m\]\n\[\033[0;32m\]\$\[\e[0;32m\] \e[0;31m\]$(parse_git_branch)\n\[\033[0;32m\]\$ \[\e[0m\]'
+#########################
