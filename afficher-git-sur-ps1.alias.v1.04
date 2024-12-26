@@ -234,6 +234,9 @@ RESET="\e[0m"
  #####
  # 0 # Rebase a tester ! ... !
  #####
+
+# Ce message ne s'affiche pas :
+
 # Vérifier si un rebasage est en cours :
 if is_rebase_in_progress; then
 local rebase_info="${ROUGE}[Attention ! Un rebase en cours !]${RESET}"
@@ -245,7 +248,7 @@ else
 
     # Ajouter des alias git dans le pense bête :
     # Afficher les alias gita gitc gitp pour ajouter les fichiers, lancer le commit, pousser vers origin :
-    result="$result\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : gita gitc gitp gitdiff gits gitdiff gitl gitlogx gitstatus${RESET}"
+    result="$result\n${VERT}${prompt_symbol}${RESET} ${GRIS}Commandes alias : gita gitc gitca gitp gitpf - gits gitstatus gitl gitlogdiff gitlogx${RESET}"
 
 
 
