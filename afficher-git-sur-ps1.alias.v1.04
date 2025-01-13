@@ -115,7 +115,7 @@ RESET="\e[0m"
  # Aucune modification Git en attente #
  ######################################
  # La variable aucun (aucun changement) a pour valeur minimale le nom de la branche git. Aucune modification n'est en attente :
- local aucun="Nom de la branche${VERT}➜ $branch_name ${RESET}"
+ local aucun="Nom de la branche ${VERT}➜ $branch_name ${RESET}"
 
  ###################################
  # Message dans un répertoire .git #
@@ -205,7 +205,8 @@ RESET="\e[0m"
  ###########################################################
  # Préparer l'affichage du contenu de la variable résultat #
  ###########################################################
- # Si les 4 variables sont vides :
+ # Si les 5 variables sont vides :
+ # 0) Aucun fichier stash.
  # 1) Aucun fichier ajouté.
  # 2) Aucun fichier modifié.
  # 3) Aucun fichier ajouté a l'index.
