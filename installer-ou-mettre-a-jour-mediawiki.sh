@@ -18,7 +18,8 @@
 ###############################
 # Mediawiki est déjà installé #
 ###############################
-# ✅ Ce script vérifie si une mise à jour est disponible.
+# ✅ Ce script vérifie si une mise à jour est disponible et propose de choisir la version de Mediawiki a mettre à jour ou a installer.
+# ✅ Ce script vérifie les dépendances installées sur le serveur pour Mediawiki. (Version du Serveur installé, Version de PHP installé, extensions PHP installées, version de la base de données installée.)
 # ❌ Ce script propose de faire une sauvegarde de Mediawiki.
 # ❌ Ce script propose de copier le répertoire existant de Mediawiki.
 ###############################
@@ -105,9 +106,9 @@
 ############################################################
 
     # Remplacer nom_bdd et user_bdd et password_bdd et le nom du serveur localhost avec les informations de connexion à votre Base de données.
-    BDD_existe_NAME="NOM";
-    BDD_existe_USER="USER";
-    BDD_existe_PASSWORD="PASSWD";
+    BDD_existe_NAME="";
+    BDD_existe_USER="";
+    BDD_existe_PASSWORD="";
     BDD_existe_SERVEUR="localhost";
 
 ######################################
@@ -196,18 +197,22 @@ ui_init() {
     printf '\033[?25l'
 }
 
+# Cacher le curseur au début du script :
+# printf '\033[?25l'
+ui_init
+
 # Réafficher le curseur à la fin du script :
 ui_cleanup() {
     printf '\033[?25h'
     stty sane < /dev/tty
 }
 
+# Interruption clavier (Ctrl+C) :
 trap 'ui_cleanup; exit 130' INT
+# Signal de terminaison :
 trap 'ui_cleanup; exit 143' TERM
+# À la sortie normale du script :
 trap ui_cleanup EXIT
-
-# Cacher le curseur au début du script :
-printf '\033[?25l'
 
 ###############################################################################
 # Fonction réutilisable pour mettre fin au sleep avec n'importe quelle touche #
@@ -339,7 +344,9 @@ else
 fi
 
 
-# Version installée ou a installer.
+# Version de Mediawiki installée ou a installer.
+choix_de_version_mediawiki() {
+    echo " ✅ Ce script vérifie si une mise à jour est disponible et propose de choisir la version de Mediawiki a mettre à jour ou a installer.";
 ##########################################
 # Afficher le titre vide l'écran :
 afficher_titre "Installation de Mediawiki"
@@ -374,13 +381,13 @@ else
     echo "Continuer pour sauvegarder la version actuelle et réinstaller MediaWiki ? (o/N) : \c"
     read choix
     case "$choix" in
-        o|O|oui|OUI)
+        o|O|oui|OUI|c|C)
             echo "\033[33m ⚠️  Continuer l'installation en cours...\033[0m"
             ### 👉 Code de réinstallation ici
             ;;
         *)
             echo "\033[31m Fin de l'installation !\033[0m"
-            exit 1
+            exit 0;
             ;;
     esac
 fi
@@ -399,7 +406,7 @@ echo "";
 stty -echoctl < /dev/tty
 
 while true; do
-    printf "Afficher les dernières \"x\" versions de Mediawiki (Ex:3) ou appuyer sur \"c\" pour continuer : "
+    printf " Afficher les dernières \"x\" versions de Mediawiki (Ex:3) ou appuyer sur \"c\" pour continuer : "
     read -r x
 
     case "$x" in
@@ -438,10 +445,6 @@ while true; do
     break
 done
 
-    # Temps d'attente de 20 secondes.
-    # Appuyer une touche pour continuer l'installation...
-    sleep_key 20;
-
 echo "";
 
 #################################################
@@ -455,7 +458,7 @@ while true; do
     printf " Confirmer une version de Mediawiki a installer (Ex: 1.45.1) ou appuyer sur \"c\" pour continuer avec la version de Mediawiki $MW_VERSION_ATTENDUE renseignée au début du script : "
     read -r MW_VERSION_ATTENDUE_CONFIRMATION
 
-    # ✅ Quitter avec c ou C :
+    # ✅ Continuer avec c ou C :
     case "$MW_VERSION_ATTENDUE_CONFIRMATION" in
         c|C|continuer)
             # ✅ Utiliser la version de Mediawiki $MW_VERSION_ATTENDUE renseignée au début du script.
@@ -482,33 +485,35 @@ while true; do
     if ! curl -fsI "$ZIP_URL" >/dev/null 2>&1; then
         echo " ❌ La version MediaWiki $MW_VERSION_ATTENDUE_CONFIRMATION n'existe pas."
         continue
+    else
+        echo " ✅ La version de Mediawiki $MW_VERSION_ATTENDUE_CONFIRMATION a été sélectionnée.";
     fi
 
     # Sortir de la boucle.
     break
 done
 
-    # Temps d'attente de 20 secondes.
-    # Appuyer une touche pour continuer l'installation...
-    sleep_key 20;
+echo "";
 
 #############################################################
 # Afficher la version de Mediawiki sélectionnée a installer #
 #############################################################
 # La version de Mediawiki a installer est dans $FLAG_MW_VERSION_CONFIRMEE et le lien correspondant a utiliser dans $ZIP_URL :
 if [ -n "$FLAG_MW_VERSION_CONFIRMEE" ]; then
-    echo " ✅ Continuer l'installation de MediaWiki $MW_VERSION_ATTENDUE_CONFIRMATION"
-    echo " 📦 Lien pour télécharger la version de Mediawiki qui va être installée : $ZIP_URL"
+    echo " ✅ Continuer l'installation de MediaWiki ($MW_VERSION_ATTENDUE_CONFIRMATION)."
+    echo " 📦 Lien pour télécharger cette version de Mediawiki : $ZIP_URL"
 # Afficher la version de Mediawiki renseignée au début du script et le lien a utiliser :
 else
-    echo " ✅ Utiliser la version de Mediawiki $MW_VERSION_ATTENDUE renseignée au début du script."
+    echo " ✅ Continuer l'installation de Mediawiki $MW_VERSION_ATTENDUE."
     VERSION_PRINCIPALE="${MW_VERSION_ATTENDUE%.*}"
 
-    # Exemple :
+    ###########
+    # Exemple #
+    ###########
     # ZIP_URL="https://releases.wikimedia.org/mediawiki/1.44/mediawiki-1.44.0.zip"
 
     ZIP_URL="$MW_URL_ALL_VERSIONS/$VERSION_PRINCIPALE/mediawiki-$MW_VERSION_ATTENDUE.zip"
-    echo " 📦 Lien pour télécharger la version de Mediawiki qui va être installée : $ZIP_URL"
+    echo " 📦 Lien pour télécharger cette version de Mediawiki : $ZIP_URL"
     # Version reconfirmée :
     FLAG_MW_VERSION_CONFIRMEE="$MW_VERSION_ATTENDUE"
 fi
@@ -516,29 +521,46 @@ fi
     # Temps d'attente de 20 secondes.
     # Appuyer une touche pour continuer l'installation ...
     sleep_key 20;
-#############################################################
+##########################################
+# Fin de choix_de_version_mediawiki
+}
 
 
-# Vérifier les services disponibles sur le serveur.
+verifier_les_services_du_system() {
+# Vérifier les services installés sur le système.
 ##########################################
 # Afficher le titre vide l'écran :
 afficher_titre "Installation de Mediawiki"
-afficher_introduction "Vérifier les services disponibles sur le serveur pour installer Mediawiki.";
+afficher_introduction "Vérifier les services installés sur le système pour installer Mediawiki.";
 ##########################################
 
-echo " Vérifier la version de Apache2 :";
+echo "#######################################";
+echo "# Serveur web installé sur le système #";
+echo "#######################################";
+echo "";
+
+echo " ⚙️  Vérifier la version de Apache2 :";
 if command -v apache2 > /dev/null 2>&1; then
 echo "\033[32m ✅ Apache2 est installé.\n $(apache2 -v | head -n 1)\033[0m";
 else
     echo "\033[31m ❌ Apache2 n'est pas installé.\033[0m";
 fi
+
+    # Temps d'attente de 5 secondes.
+    # Appuyer une touche pour continuer l'installation ...
+    sleep_key 5;
+
 echo "";
 
-# echo " Liste des répertoires PHP présents sur le serveur :";
-# ls /etc/php/;
-# echo "";
+echo "#############################################";
+echo "# Versions de PHP installées sur le système #";
+echo "#############################################";
+echo "";
 
-echo " Vérifier la version de PHP CLI :";
+echo " ⚙️  Il est recommandé d'utiliser php 8.2 ou supérieur avec les dernières versions de Mediawiki.";
+echo "";
+
+echo " ⚙️  Vérifier la version de PHP CLI :";
 if which php > /dev/null; then
     echo " ✅ Version installée par défaut pour PHP CLI :";
     php_cli_defaut=$(php -v);
@@ -548,16 +570,15 @@ if which php > /dev/null; then
 
     echo "\033[32m $php_cli_defaut \033[0m";
     echo "";
-    echo " Chemin vers l'executable de PHP CLI :";
     php_cli=$(command -v php);
-    echo "\033[32m $php_cli \033[0m";
+    echo " ⚙️  Chemin vers l'executable de PHP CLI : \033[32m$php_cli \033[0m";
 else
     echo "\033[31m ❌ Aucune version de PHP CLI n'est installée par défaut.\033[0m";
 fi
 echo "";
 
 # Vérifier les versions installées de PHP CLI et PHP FPM :
-echo " Vérifier les versions installées de PHP CLI et PHP FPM :";
+echo " ⚙️  Vérifier les versions installées de PHP CLI et PHP FPM :";
 php_found=false
 
 # Chercher toutes les versions CLI dans le répertoire PHP :
@@ -586,10 +607,108 @@ done
 if ! $php_found; then
     echo "\033[31m ❌ Aucune version PHP FPM trouvée.\033[0m";
 fi
+
+    # Temps d'attente de 20 secondes.
+    # Appuyer une touche pour continuer l'installation ...
+    sleep_key 20;
+
+echo "";
+
+echo "########################################################";
+echo "# Extensions PHP installées et activées pour Mediawiki #"
+echo "########################################################";
+echo "";
+
+# Liste des extensions PHP à vérifier :
+PACKAGES_INCLUS=$(cat <<EOF
+exif|inclus dans PHP|Lecture métadonnées des images|\033[33mFacultatif\033[0m
+fileinfo|inclus dans PHP|Détection du type MIME des fichiers uploadés|\033[32mRequis\033[0m
+gettext|inclus dans PHP|Localisation et traduction|\033[33mFacultatif\033[0m
+json|inclus dans PHP|Lecture / écriture JSON pour API|\033[32mRequis\033[0m
+openssl|inclus dans PHP|Sécurisation SSL/TLS et chiffrement|\033[32mRequis\033[0m
+sodium|inclus dans PHP|Sécurité et chiffrement|\033[32mRequis\033[0m
+EOF
+)
+
+echo " Inclus dans PHP :";
+(
+echo " ✓/✗ |\033[4mExtension\033[0m|\033[4mCommande d'installation\033[0m|\033[4mUsage\033[0m|\033[4mRequis pour Mediawiki\033[0m"
+echo "$PACKAGES_INCLUS" | while IFS='|' read -r ext cmd role req; do
+    if php -m 2>/dev/null | grep -qi "^$ext$"; then
+        status="\033[32m ✅ \033[0m"
+    else
+        status="\033[31m ❌ \033[0m"
+    fi
+    echo "$status|$ext|$cmd|$role|$req"
+done
+) | column -s '|' -t
+
+echo "";
+
+PACKAGES_REQUIS=$(cat <<EOF
+intl|sudo apt install php-intl|Dates, langues, formats|\033[32mRequis\033[0m
+mbstring|sudo apt install php-mbstring|Gestion de chaînes UTF-8|\033[32mRequis\033[0m
+mysqli|sudo apt install php-mysql|Connexion à MySQL / MariaDB|\033[32mRequis si MySQL / MariaDB\033[0m
+pgsql|sudo apt install php-pgsql|Connexion à PostgreSQL|\033[32mRequis si PostgreSQL\033[0m
+sqlite3|sudo apt install php-sqlite3|Connexion à SQLite|\033[32mRequis si SQLite\033[0m
+xml|sudo apt install php-xml|Analyse XML pour importer / exporter|\033[32mRequis\033[0m
+EOF
+)
+
+echo " Requis pour Mediawiki :";
+(
+echo " ✓/✗ |\033[4mExtension\033[0m|\033[4mCommande d'installation\033[0m|\033[4mUsage\033[0m|\033[4mRequis pour Mediawiki\033[0m"
+echo "$PACKAGES_REQUIS" | while IFS='|' read -r ext cmd role req; do
+    if php -m 2>/dev/null | grep -qi "^$ext$"; then
+        status="\033[32m ✅ \033[0m"
+    else
+        status="\033[31m ❌ \033[0m"
+    fi
+    echo "$status|$ext|$cmd|$role|$req"
+done
+) | column -s '|' -t
+
+echo "";
+
+PACKAGES_FACULTATIF=$(cat <<EOF
+apcu|sudo apt install php-apcu|Cache objet pour accélérer MediaWiki|\033[33mFacultatif\033[0m
+bcmath|sudo apt install php-bcmath|Calculs sur grands nombres (rare)|\033[33mFacultatif\033[0m
+curl|sudo apt install php-curl|Requêtes HTTP externes (API, extensions)|\033[33mFacultatif\033[0m
+gd|sudo apt install php-gd|Création de vignettes d’images|\033[33mFacultatif mais recommandé\033[0m
+gmp|sudo apt install php-gmp|Calculs sur grands nombres (rare)|\033[33mFacultatif\033[0m
+imagick|sudo apt install php-imagick|Création et manipulation d’images|\033[33mFacultatif\033[0m
+ldap|sudo apt install php-ldap|Authentification LDAP / Active Directory|\033[33mFacultatif\033[0m
+memcached|sudo apt install php-memcached|Cache objet partagé|\033[33mFacultatif\033[0m
+zip|sudo apt install php-zip|Gestion des fichiers compressés|\033[33mFacultatif\033[0m
+EOF
+)
+
+echo " Facultatif pour Mediawiki :";
+(
+echo " ✓/✗ |\033[4mExtension\033[0m|\033[4mCommande d'installation\033[0m|\033[4mUsage\033[0m|\033[4mRequis pour Mediawiki\033[0m"
+echo "$PACKAGES_FACULTATIF" | while IFS='|' read -r ext cmd role req; do
+    if php -m 2>/dev/null | grep -qi "^$ext$"; then
+        status="\033[32m ✅ \033[0m"
+    else
+        status="\033[31m ❌ \033[0m"
+    fi
+    echo "$status|$ext|$cmd|$role|$req"
+done
+) | column -s '|' -t
+
+    # Temps d'attente de 20 secondes.
+    # Appuyer une touche pour continuer l'installation ...
+    sleep_key 20;
+
+echo "";
+
+echo "############################################";
+echo "# Base de données installée sur le système #";
+echo "############################################";
 echo "";
 
 # Vérifier MySQL et version compatible avec MediaWiki :
-echo " Vérifier si MySQL est installé :";
+echo " ⚙️  Vérifier si MySQL est installé :";
 if command -v mysql > /dev/null 2>&1; then
     mysql_version=$(mysql --version);
     echo "\033[32m ✅ MySQL est installé :\n $mysql_version\033[0m";
@@ -599,7 +718,7 @@ fi
 echo "";
 
 # Vérifier MariaDB et version compatible avec MediaWiki :
-echo " Vérifier si MariaDB est installé :";
+echo " ⚙️  Vérifier si MariaDB est installé :";
 if command -v mariadb > /dev/null 2>&1; then
     mariadb_version=$(mariadb --version)
     echo "\033[32m ✅ MariaDB est installé :\n $mariadb_version\033[0m";
@@ -609,7 +728,7 @@ fi
 echo "";
 
 # Vérifier si d'autres bases de données sont disponibles (PostgreSQL) :
-echo " Vérifier si PostgreSQL est installé :";
+echo " ⚙️  Vérifier si PostgreSQL est installé :";
 if command -v psql > /dev/null 2>&1; then
     echo " ✅ PostgreSQL est installé :";
     psql_version=$(psql --version)
@@ -620,7 +739,7 @@ fi
 echo "";
 
 # Vérifier si d'autres bases de données compatibles MediaWiki sont disponibles (SQLite3) :
-echo " Vérifier si SQLite3 est installé :";
+echo " ⚙️  Vérifier si SQLite3 est installé :";
 if command -v sqlite3 > /dev/null 2>&1; then
     sql_version=$(sqlite3 --version)
     echo "\033[32m ✅ SQLite3 est installé :\n $sql_version\033[0m";
@@ -632,8 +751,14 @@ fi
     # Appuyer une touche pour continuer l'installation...
     sleep_key 30;
 
+echo "";
+##########################################
+# Fin de verifier_les_services_du_system
+}
 
-# Vérifier si une base de données existe.
+
+verifier_creer_une_base_de_donnees() {
+# Vérifier si une base de données existe :
 ##########################################
 # Afficher le titre vide l'écran :
 afficher_titre "Installation de Mediawiki"
@@ -652,22 +777,23 @@ while :; do
     echo " 1. Utiliser les informations du fichier LocalSettings.php pour se connecter à la base de données si Mediawiki est déjà installé."
     echo " 2. Utiliser les accès qui ont été renseignés dans ce script pour se connecter si une base de données existe déjà."
     echo " 3. Mediawiki n'est pas encore installé et une nouvelle base de données doit être créée."
-    echo " 4|Q|q : Quitter l'installation."
-
-    printf " Votre choix : "
+    echo " q|Q : Quitter l'installation."
+    echo "";
+    printf " Sélectionner un choix ou quitter : "
     read choix
 
-    # Si entrée vide → recommencer
+    # Si entrée vide → recommencer :
     if [ -z "$choix" ]; then
         clear;
-# Erreur vs invalide ?
         afficher_titre "Installation de Mediawiki"
+# Erreur vs invalide ? -->
         echo "\033[31m ❌ Erreur, il faut utiliser 1, 2, 3 ou 4.\033[0m"
+# ?
 echo "";
         continue
     fi
 
-    # Vérifier que le choix est valide avec case (plus sûr que -eq)
+    # Vérifier que le choix est valide :
     case "$choix" in
         1)
             echo " Vous avez choisi 1"
@@ -681,8 +807,12 @@ echo "";
             echo " Vous avez choisi 3"
             break
             ;;
-        4|Q|q)
+        q|Q)
             echo " Fin de l'installation."
+
+            # Réafficher le curseur à la fin du script :
+            ui_cleanup
+
             exit 0
             ;;
         *)
@@ -694,7 +824,6 @@ echo "";
             ;;
     esac
 done
-
 
 ###########
 # Choix 1 #
@@ -740,7 +869,6 @@ if [ "$choix" -eq 1 ]; then
     fi
 fi
 
-
 ###########
 # Choix 2 #
 ###########
@@ -774,7 +902,6 @@ if [ "$choix" -eq 2 ]; then
     fi
 fi
 
-
 ###########
 # Choix 3 #
 ###########
@@ -786,13 +913,14 @@ if [ "$choix" -eq 3 ]; then
     sleep_key 20;
 fi
 
-
 ###########
 # Choix 4 #
 ###########
 # Quitter l'installation :
 if [ "$choix" -eq 4 ]; then
-    exit;
+    # Réafficher le curseur à la fin du script :
+    ui_cleanup
+    exit 0;
 fi
 
 
@@ -1028,10 +1156,109 @@ fi
 ##############################################################################################
 ### Attention à ne pas changer le password de l'utilisateur de la base de données par erreur.#
 ##############################################################################################
+# Fin de verifier_creer_une_base_de_donnees
+}
+
+
+
+# Afficher toutes les BDD :
+# mysql -u root -e "SHOW DATABASES;"
 
 
 # Arrêter Apache 2.
 # Redémarrer Apache 2.
+# Arrêter MySQL.
+# Redémarrer MySQL.
+
+
+
+########
+# Menu #
+##########################################
+# Afficher le titre vide l'écran :
+afficher_titre "Installation de Mediawiki"
+afficher_introduction "Menu principale.";
+##########################################
+
+# Ne pas afficher le C^ du CTRL-C :
+stty -echoctl < /dev/tty
+
+# Exemple de fonction pour ajouter un bloc de code dans le menu :
+# dev() {
+#    dev "Code dev ..."
+# }
+
+echo " Menu :"
+echo " 1) Vérifier si Mediawiki doit être mis à jour et sélectionner la version de Mediawiki."
+echo " 2) Vérifier les services installés sur le système."
+echo " 3) Vérifier si il existe une base de données ou créer une nouvelle base de données.";
+echo " q|Q) pour quitter.";
+echo "";
+printf " Sélectionner un choix ou quitter : "
+
+read MENU
+case "$MENU" in
+    1|choix_de_version_mediawiki)
+        choix_de_version_mediawiki
+        # ➜ Enchaînement automatique :
+        verifier_les_services_du_system
+        verifier_creer_une_base_de_donnees
+        ;;
+    2|verifier_les_services_du_system)
+        verifier_les_services_du_system
+        # ➜ Enchaînement automatique : -- Si choix 2, 3, ..., le choix de version a mettre à jour n'a pas été confirmé (1).
+        verifier_creer_une_base_de_donnees
+        ;;
+    3|verifier_creer_une_base_de_donnees)
+        verifier_creer_une_base_de_donnees
+        ;;
+#    4|dev)
+#        dev
+#        ;;
+    q|Q|*)
+        echo "Fin du script d'installation."
+        # Réafficher le curseur à la fin du script :
+        ui_cleanup
+        exit 0;
+        ;;
+esac
+
+
+# Exemple :
+# Aller d'un bloc à un autre bloc :
+#
+# verifier_creer_une_base_de_donnees() {
+#    echo "Vérification / création de la base de données..."
+#    traitement ici
+#
+#    echo
+#    echo "Que voulez-vous faire ensuite ?"
+#    echo " 1) Retourner au choix de version MediaWiki"
+#    echo " 2) Continuer"
+#    echo " 3) Revenir au menu principal"
+#    echo
+#
+#    printf "Votre choix : "
+#    read CHOIX
+#
+#    case "$CHOIX" in
+#        1)
+#            choix_de_version_mediawiki
+#            return
+#            ;;
+#        2)
+#            return   # continuer le flux normal
+#            ;;
+#        3)
+#            return 0 # le menu principal reprendra
+#            ;;
+#        *)
+#            echo "Choix invalide, retour au menu"
+#            return
+#            ;;
+#    esac
+# }
+
 
 
 ####################
@@ -1045,6 +1272,7 @@ fi
 # fi
 
 
-# Activer le debug avant cette partie :
+# Activer le debug :
 # set +x
+# code ...
 # set -x
