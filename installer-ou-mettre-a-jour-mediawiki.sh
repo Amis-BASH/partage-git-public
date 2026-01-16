@@ -59,7 +59,7 @@
 #################################################
 
     # Répertoire recommandé pour copier le script installer-ou-mettre-a-jour-mediawiki.sh et pour démarrer l'installation :
-    MW_Chemin_Du_Script="/var/www";
+    MW_Chemin_Du_Script="/var/www/installer-mediawiki";
 
 ##########################################################
 # SI MEDIAWIKI EST DEJA INSTALLÉ OU DOIT ÊTRE MIS À JOUR #
@@ -196,8 +196,6 @@ ui_init() {
     stty -echoctl < /dev/tty
     printf '\033[?25l'
 }
-
-# Cacher le curseur au début du script :
 # printf '\033[?25l'
 ui_init
 
@@ -345,7 +343,7 @@ fi
 
 
 # Version de Mediawiki installée ou a installer.
-choix_de_version_mediawiki() {
+verifier_version_de_mediawiki_a_installer() {
     echo " ✅ Ce script vérifie si une mise à jour est disponible et propose de choisir la version de Mediawiki a mettre à jour ou a installer.";
 ##########################################
 # Afficher le titre vide l'écran :
@@ -522,11 +520,11 @@ fi
     # Appuyer une touche pour continuer l'installation ...
     sleep_key 20;
 ##########################################
-# Fin de choix_de_version_mediawiki
+# Fin de verifier_version_de_mediawiki_a_installer
 }
 
 
-verifier_les_services_du_system() {
+verifier_les_services_du_systeme() {
 # Vérifier les services installés sur le système.
 ##########################################
 # Afficher le titre vide l'écran :
@@ -753,7 +751,7 @@ fi
 
 echo "";
 ##########################################
-# Fin de verifier_les_services_du_system
+# Fin de verifier_les_services_du_systeme
 }
 
 
@@ -1198,14 +1196,14 @@ printf " Sélectionner un choix ou quitter : "
 
 read MENU
 case "$MENU" in
-    1|choix_de_version_mediawiki)
-        choix_de_version_mediawiki
+    1|verifier_version_de_mediawiki_a_installer)
+        verifier_version_de_mediawiki_a_installer
         # ➜ Enchaînement automatique :
-        verifier_les_services_du_system
+        verifier_les_services_du_systeme
         verifier_creer_une_base_de_donnees
         ;;
-    2|verifier_les_services_du_system)
-        verifier_les_services_du_system
+    2|verifier_les_services_du_systeme)
+        verifier_les_services_du_systeme
         # ➜ Enchaînement automatique : -- Si choix 2, 3, ..., le choix de version a mettre à jour n'a pas été confirmé (1).
         verifier_creer_une_base_de_donnees
         ;;
@@ -1243,7 +1241,7 @@ esac
 #
 #    case "$CHOIX" in
 #        1)
-#            choix_de_version_mediawiki
+#            verifier_version_de_mediawiki_a_installer
 #            return
 #            ;;
 #        2)
